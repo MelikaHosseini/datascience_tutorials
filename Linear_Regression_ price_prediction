@@ -1,0 +1,139 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn import metrics
+import statsmodels.api as sm
+from sklearn import metrics
+from sklearn.metrics import classification_report
+df = pd.read_csv('data/houses_prices.csv')	
+df.info()
+ 
+df.describe()
+ df.shape: (1000, 17)
+df.head(3)
+ pd.set_option('display.max_columns',85)
+pd.set_option('display.max_rows',85)
+df.columns
+Index(['Address', 'Neighborhood', 'Bedrooms', 'Bathrooms', 'Square Meters',
+       'Building Age', 'Garden', 'Garage', 'Floors', 'Property Type',
+       'Heating Type', 'Balcony', 'Materials',
+       'Building Status', 'Price (£)'],
+      dtype='object')
+df.columns = df.columns.str.replace(' ','')
+df.columns = [x.lower() for x in df.columns]
+#df.columns = [x.replace(" ","_") for x in df.columns]
+df.rename(columns = {'price(£)':'price'},inplace = True)
+df.columns
+Index(['address', 'neighborhood', 'bedrooms', 'bathrooms', 'squaremeters',
+       'buildingage', 'garden', 'garage', 'floors', 'propertytype',
+       'heatingtype', 'balcony',
+       'buildingstatus', 'price'],
+      dtype='object')
+df.dropna(inplace=True)
+df['garden'] = df['garden'].map({'No':0,'Yes':1})
+df['garage'] = df['garage'].map({'No':0,'Yes':1})
+df.to_csv('london_houses.csv',index=False)
+print(df['neighborhood'].value_counts())
+neighborhood
+Kensington      114
+Marylebone      113
+Camden          106
+Westminster      98
+Islington        97
+Greenwich        97
+Notting Hill     96
+Soho             96
+Chelsea          94
+Shoreditch       89
+Name: count, dtype: int64
+print(df['propertytype'].value_counts())
+propertytype
+Detached House    349
+Semi-Detached     345
+Apartment         306
+Name: count, dtype: int64
+sns.set_theme(style='darkgrid', palette = "bright")
+plt.title('Distribution of House Prices in London')
+plt.xlabel('Median Value of house prices in pounds)')
+sns.histplot(data=df, x="price", hue="garage", multiple="stack",kde=True)
+# displot: distribution of data, 
+f = sns.displot(data=df, x="price", col="floors", kde=True)
+sns.histplot(x='price', data=df, kde=True, bins=10, stat='count', hue='buildingstatus', multiple='stack')
+f1 = sns.displot(data=df, x='price', col='heatingtype', kde=True)
+plt.figure(figsize=(10,6))
+sns.histplot(x='price', hue='propertytype', multiple='dodge',data=df, palette='pastel')
+sns.histplot(x='price', data=df, kde=True, bins=10)
+sns.barplot(data=df, x="neighborhood", y="price", errorbar="sd",
+           hue="garage", hue_order=[0,1])
+plt.xticks(rotation=45)
+plt.savefig('courseworkplot2.png')
+plt.show()
+sns.barplot(data=df, x="view", y="price", errorbar="sd",
+           hue="garden", hue_order=[0,1])
+plt.savefig('courseworkplot2.png')
+plt.show()
+groupby = df.groupby('buildingstatus')
+print(groupby.first())
+ 
+df_by = df.groupby(['heatingtype','buildingstatus']).agg(avg=('price','mean'))
+print(df_by)
+corrmatrix = df[['price','buildingage','squaremeters']].corr()
+print(corrmatrix)
+ 
+corrmatrix = df[['price','squaremeters']].corr()
+print(corrmatrix)
+
+ 
+df['buildingstatus'] = df['buildingstatus'].map({'Old':1,'New':3,'Renovated':2})
+corrmatrix = df[['price(£)','buildingstatus']].corr()
+print(corrmatrix)
+# Independent variable (Feature)
+X = df['squaremeters'].values.reshape(-1,1)
+print('X: ', X[:10])
+# dependent variable (Label)
+y = df['price'].values.reshape(-1)
+print('y: ', y[:10])
+mod = sm.OLS(y, X).fit()
+print("\n")
+print(mod.summary)
+
+ 
+# Setting the test size to 20% of the dataset, training 80%
+test_dataset_size = 0.2
+X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                   random_state = 1,
+                                                   test_size = test_dataset_size)
+print('Completed spliting data')
+model = LinearRegression()
+model.fit(X_train, y_train)
+print('Completed')
+predictions = model.predict(X_test)
+score = metrics.mean_absolute_error(y_test, predictions)
+print('\nMAE:', round(score,3))
+MAE: 431657.363
+Xnew = [[150],[160],[170]]
+ynew = model.predict(Xnew)
+print(f"X={Xnew[0]},vPredicted={round(ynew[0],1)}")
+print(f"X={Xnew[1]}, Predicted={round(ynew[1],1)}")
+print(f"X={Xnew[2]},Prediicted={round(ynew[2],1)}")
+X=[150],Predicted=1862564.6
+X=[160], Predicted=1985591.8
+X=[170],Prediicted=2108619.0
+X2 = df[['floors','buildingage']].values.reshape(-1,2)
+y = df['price'].values.reshape(-1)
+X2_train, X2_test, y2_train, y2_test = train_test_split(X2,y, 
+                                                       random_state = 1,
+                                                       test_size = test_dataset_size)
+model2 = LinearRegression()
+model2.fit(X2_train, y2_train)
+print("\nOLS Regression results for two variables\n")
+mod2 = sm.OLS(y, X2).fit()
+print(mod2.summary())
+predictions2 = model2.predict(X2_test)
+score2 = metrics.mean_absolute_error(y2_test, predictions2)
+print('\nMAE:', round(score2,3),'\n')
+ 
+
